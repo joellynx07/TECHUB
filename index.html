@@ -1,0 +1,1496 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>LynxHub – Campus Tech Marketplace</title>
+    <meta name="author" content="Joel Lynx" />
+    <meta
+      name="description"
+      content="Phones, laptops and engineering gear from verified campus sellers. Chat on WhatsApp, meet on campus, pay with MoMo."
+    />
+    <meta name="theme-color" content="#07080d" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <style>
+      :root {
+        --bg: #07080d;
+        --cy: #22e5ff;
+        --vi: #8b5cf6;
+      }
+      html {
+        background: var(--bg);
+        color: #eef1f8;
+        font-family: Sora, system-ui, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        min-height: 100vh;
+        padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+      }
+      .orb {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(90px);
+        opacity: 0.33;
+        pointer-events: none;
+        z-index: -1;
+      }
+      .glass {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(18px) saturate(140%);
+        -webkit-backdrop-filter: blur(18px) saturate(140%);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+      }
+      .card {
+        border-radius: 20px;
+        overflow: hidden;
+        transition:
+          transform 0.2s,
+          border-color 0.2s;
+        content-visibility: auto;
+        contain-intrinsic-size: 300px;
+      }
+      .card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(34, 229, 255, 0.4);
+      }
+      .card.sold {
+        opacity: 0.55;
+      }
+      .art {
+        aspect-ratio: 4/3;
+        display: grid;
+        place-items: center;
+        font-size: 54px;
+        position: relative;
+        background:
+          radial-gradient(
+            circle at 30% 20%,
+            hsl(var(--h) 80% 55%/0.45),
+            transparent 70%
+          ),
+          #0d0f18;
+      }
+      .art img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .heart {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(8px);
+        color: #fff9;
+        transition: transform 0.15s;
+      }
+      .heart.on {
+        color: #ff4d79;
+        transform: scale(1.12);
+      }
+      .tag {
+        position: absolute;
+        left: 8px;
+        top: 8px;
+        font-size: 12px;
+        padding: 3px 9px;
+        border-radius: 99px;
+        background: #000a;
+      }
+      .chip {
+        padding: 7px 13px;
+        border-radius: 99px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        white-space: nowrap;
+        font-size: 13px;
+        color: #fffb;
+        transition: background 0.15s;
+      }
+      .chip.on {
+        background: linear-gradient(135deg, var(--cy), var(--vi));
+        color: #05060a;
+        border-color: transparent;
+        font-weight: 600;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 14px;
+        transition:
+          transform 0.12s,
+          filter 0.15s;
+      }
+      .btn:active {
+        transform: scale(0.97);
+      }
+      .btn-p {
+        background: linear-gradient(135deg, var(--cy), var(--vi));
+        color: #05060a;
+      }
+      .btn-wa {
+        background: #25d366;
+        color: #04200e;
+        width: 100%;
+      }
+      .btn-g {
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .btn[disabled] {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      .in {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 10px 12px;
+        color: inherit;
+        outline: none;
+      }
+      .in:focus,
+      .chip:focus-visible,
+      .btn:focus-visible,
+      .heart:focus-visible {
+        border-color: var(--cy);
+        box-shadow: 0 0 0 3px rgba(34, 229, 255, 0.25);
+        outline: none;
+      }
+      select option {
+        background: #10121c;
+      }
+      .noscroll {
+        scrollbar-width: none;
+      }
+      .noscroll::-webkit-scrollbar {
+        display: none;
+      }
+      #toasts {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: calc(16px + env(safe-area-inset-bottom));
+        display: grid;
+        gap: 8px;
+        justify-items: center;
+        z-index: 90;
+        pointer-events: none;
+      }
+      .toast {
+        padding: 11px 16px;
+        border-radius: 14px;
+        background: #12141f;
+        border: 1px solid rgba(34, 229, 255, 0.4);
+        font-size: 14px;
+        animation: up 0.25s ease;
+      }
+      .toast.err {
+        border-color: #ff4d79;
+      }
+      .toast.out {
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      @keyframes up {
+        from {
+          transform: translateY(12px);
+          opacity: 0;
+        }
+      }
+      .kpi {
+        border-radius: 16px;
+        padding: 14px;
+      }
+      .kpi b {
+        font-size: 22px;
+        display: block;
+      }
+      .sheet {
+        transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      [hidden] {
+        display: none !important;
+      }
+      :root {
+        --tx: #eef1f8;
+        --mut: rgba(238, 241, 248, 0.55);
+        --glass: rgba(255, 255, 255, 0.05);
+        --g2: rgba(255, 255, 255, 0.08);
+        --bd: rgba(255, 255, 255, 0.09);
+        --inbg: rgba(255, 255, 255, 0.06);
+        --sheet: rgba(12, 14, 23, 0.92);
+        --barbg: rgba(7, 8, 13, 0.72);
+        --onacc: #05060a;
+      }
+      [data-theme="light"] {
+        --bg: #f4f6fb;
+        --tx: #0b1020;
+        --mut: rgba(11, 16, 32, 0.58);
+        --glass: rgba(255, 255, 255, 0.75);
+        --g2: rgba(11, 16, 32, 0.07);
+        --bd: rgba(11, 16, 32, 0.1);
+        --inbg: #fff;
+        --sheet: rgba(255, 255, 255, 0.96);
+        --barbg: rgba(244, 246, 251, 0.82);
+        --onacc: #fff;
+      }
+      html {
+        color: var(--tx);
+      }
+      .glass {
+        background: var(--glass);
+        border-color: var(--bd);
+      }
+      .in {
+        background: var(--inbg);
+        border-color: var(--bd);
+      }
+      .btn-g {
+        background: var(--g2);
+      }
+      .chip {
+        border-color: var(--bd);
+        color: var(--mut);
+      }
+      .btn-p,
+      .chip.on {
+        background: linear-gradient(135deg, var(--cy), var(--vi));
+        color: var(--onacc);
+      }
+      .sheet {
+        background: var(--sheet) !important;
+      }
+      #bar {
+        background: var(--barbg) !important;
+        border-color: var(--bd) !important;
+      }
+      .toast {
+        background: var(--sheet);
+      }
+      [class*="text-white/"] {
+        color: var(--mut) !important;
+      }
+      .text-cyan-300 {
+        color: var(--cy) !important;
+      }
+      .border-cyan-300 {
+        border-color: var(--cy) !important;
+      }
+      .orb {
+        background: var(--cy) !important;
+      }
+      .orb + .orb {
+        background: var(--vi) !important;
+      }
+      [data-theme="light"] .orb {
+        opacity: 0.16;
+      }
+      #grid {
+        display: grid;
+        grid-template-columns: repeat(
+          auto-fill,
+          minmax(min(var(--cw, 200px), calc(50% - 8px)), 1fr)
+        );
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute">
+      <defs>
+        <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" style="stop-color: var(--cy)" />
+          <stop offset="1" style="stop-color: var(--vi)" />
+        </linearGradient>
+        <symbol id="logo" viewBox="0 0 64 64">
+          <path
+            d="M11 9L23 22Q32 19 41 22L53 9L56 35Q56 53 32 60Q8 53 8 35Z"
+            fill="#0b0d16"
+            stroke="url(#lg)"
+            stroke-width="3"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M11 9L8 3M53 9L56 3"
+            stroke="url(#lg)"
+            stroke-width="3"
+            stroke-linecap="round"
+          />
+          <path
+            d="M15 36Q21 29 28 36Q21 40 15 36ZM49 36Q43 29 36 36Q43 40 49 36Z"
+            fill="url(#lg)"
+          />
+          <path d="M28.5 46H35.5L32 51Z" fill="url(#lg)" />
+        </symbol>
+      </defs>
+    </svg>
+    <div
+      class="orb"
+      style="
+        width: 420px;
+        height: 420px;
+        left: -120px;
+        top: -80px;
+        background: #22e5ff;
+      "
+    ></div>
+    <div
+      class="orb"
+      style="
+        width: 480px;
+        height: 480px;
+        right: -160px;
+        top: 30vh;
+        background: #8b5cf6;
+      "
+    ></div>
+
+    <div
+      id="notice"
+      class="text-center text-sm font-semibold py-2 px-4"
+      style="
+        background: linear-gradient(90deg, var(--cy), var(--vi));
+        color: var(--onacc);
+      "
+      hidden
+    ></div>
+    <header class="max-w-6xl mx-auto px-4 pt-4 flex items-center gap-3">
+      <svg
+        class="w-11 h-11 shrink-0"
+        style="filter: drop-shadow(0 0 10px var(--cy))"
+      >
+        <use href="#logo" />
+      </svg>
+      <div class="leading-tight">
+        <h1 id="brandName" class="font-bold text-lg">LynxHub</h1>
+        <p id="tagline" class="text-xs text-white/50"></p>
+      </div>
+      <span
+        id="net"
+        class="ml-2 text-xs px-2 py-1 rounded-full bg-amber-400/20 text-amber-300"
+        hidden
+        >Offline</span
+      >
+      <div class="ml-auto flex gap-2">
+        <button
+          class="btn btn-g"
+          data-act="look"
+          aria-label="Change appearance"
+        >
+          Theme</button
+        ><button id="install" class="btn btn-g" hidden>Install</button>
+        <button class="btn btn-p" data-act="account" id="acctBtn">Sell</button>
+      </div>
+    </header>
+
+    <section class="max-w-6xl mx-auto px-4 mt-5">
+      <div class="glass rounded-3xl p-5 md:p-7">
+        <h2
+          id="heroT"
+          class="text-2xl md:text-3xl font-bold leading-tight"
+        ></h2>
+        <p id="heroS" class="text-white/60 mt-2 max-w-xl text-sm"></p>
+       
+    </section>
+    <nav
+      class="max-w-6xl mx-auto px-4 mt-4 flex gap-5 text-sm"
+      aria-label="Sections"
+    >
+      <button
+        data-act="tab"
+        data-v="tech"
+        id="tab-tech"
+        class="font-semibold pb-1 border-b-2 border-cyan-300"
+      >
+        Tech
+      </button>
+      <button
+        data-act="tab"
+        data-v="micro"
+        id="tab-micro"
+        class="text-white/45 text-xs pb-1 border-b-2 border-transparent self-end"
+      >
+        Campus Micro-Hub
+      </button>
+    </nav>
+
+    <div
+      id="bar"
+      class="sticky top-0 z-30 mt-3 py-3 backdrop-blur-xl bg-[#07080d]/70 border-b border-white/5"
+    >
+      <div class="max-w-6xl mx-auto px-4 grid gap-3">
+        <div class="flex gap-2">
+          <input
+            id="q"
+            class="in"
+            type="search"
+            placeholder="Search iPhone 13, HP EliteBook, multimeter…"
+            aria-label="Search listings"
+            autocomplete="off"
+          />
+          <select id="sort" class="in !w-auto" aria-label="Sort">
+            <option value="new">Newest</option>
+            <option value="low">Price: low</option>
+            <option value="high">Price: high</option>
+          </select>
+          <button class="btn btn-g" data-act="filters">Filters</button>
+        </div>
+        <div id="cats" class="flex gap-2 overflow-x-auto noscroll"></div>
+        <div id="brands" class="flex gap-2 overflow-x-auto noscroll"></div>
+      </div>
+    </div>
+
+    <main class="max-w-6xl mx-auto px-4 py-5">
+      <p id="count" class="text-sm text-white/50 mb-3"></p>
+      <div id="grid" class="gap-3 md:gap-4"></div>
+      <div id="empty" hidden class="text-center py-16 text-white/60">
+        No matches. Clear a filter or search a different brand.
+      </div>
+      <div id="sentinel" class="h-10"></div>
+    </main>
+
+    <footer id="foot" class="max-w-6xl mx-auto px-4 pb-10"></footer>
+
+    <div id="sheetWrap" class="fixed inset-0 z-50" hidden>
+      <div class="absolute inset-0 bg-black/60" data-act="close"></div>
+      <aside
+        id="sheet"
+        class="sheet glass absolute right-0 bottom-0 md:top-0 w-full md:w-[440px] max-h-[92vh] md:max-h-none overflow-y-auto rounded-t-3xl md:rounded-none p-5 bg-[#0c0e17]/90"
+        role="dialog"
+        aria-modal="true"
+      ></aside>
+    </div>
+    <div id="toasts" aria-live="polite"></div>
+
+    <script>
+      /* ================= CONFIG (paste your free Supabase keys) ================= */
+      const CFG = {
+        SUPABASE_URL: "",
+        SUPABASE_KEY: "", // leave empty = demo mode
+        IMG: {
+          provider: "supabase",
+          cloudinaryCloud: "",
+          cloudinaryPreset: "",
+          imgbbKey: "",
+        }, // provider: supabase | cloudinary | imgbb
+        DEV: {
+          name: "Joel Lynx",
+          role: "Developer",
+          whatsapp: "+233531902007",
+          phone: "+233531902007",
+          email: "joeljudiahamoah71@gmail.com",
+        }, // <- put YOUR contact here (shows in the footer)
+      };
+      const DEF = {
+        brand: "LynxHub",
+        tag: "Campus tech marketplace",
+        heroTitle: "Tech you can trust, right on campus.",
+        heroSub:
+          "Browse student sellers, chat on WhatsApp, meet on campus and pay with MoMo only after you inspect the item.",
+        notice: "",
+        theme: "aurora",
+        tech: "Phones,Laptops,Accessories,Engineering tools",
+        microName: "Campus Micro-Hub",
+        micro: "Hostels,Fashion,Services,Food",
+        dev: { ...CFG.DEV },
+      };
+      let SET = { ...DEF },
+        LOOK = JSON.parse(localStorage.lh_look || "{}");
+      const THEMES = {
+        aurora: { n: "Aurora", cy: "#22e5ff", vi: "#8b5cf6" },
+        ember: { n: "Ember", cy: "#ffb020", vi: "#ff4d79" },
+        forest: { n: "Forest", cy: "#34f0a1", vi: "#16a3b8" },
+        royal: { n: "Royal", cy: "#7aa2ff", vi: "#e879f9" },
+        day: { n: "Daylight", cy: "#0a84ff", vi: "#7c3aed", mode: "light" },
+      };
+      /* ========================================================================== */
+      const $ = (s) => document.querySelector(s);
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const fmt = (n) => "GH₵ " + Number(n).toLocaleString("en-GH");
+      let TECH = ["Phones", "Laptops", "Accessories", "Engineering tools"],
+        MICRO = ["Hostels", "Fashion", "Services", "Food"];
+      const EMO = {
+        Phones: "📱",
+        Laptops: "💻",
+        Accessories: "🎧",
+        "Engineering tools": "🔧",
+        Hostels: "🏠",
+        Fashion: "👕",
+        Services: "🛠️",
+        Food: "🍲",
+      };
+      const CONDS = ["New", "Open-box", "Used", "Refurbished"];
+
+      function toast(m, t = "") {
+        const e = document.createElement("div");
+        e.className = "toast " + t;
+        e.textContent = m;
+        $("#toasts").append(e);
+        setTimeout(() => {
+          e.classList.add("out");
+          setTimeout(() => e.remove(), 300);
+        }, 2800);
+      }
+
+      /* ---------- unified state: one object, favourites in an O(1) Set ---------- */
+      const S = {
+        items: [],
+        view: [],
+        shown: 0,
+        tab: "tech",
+        q: "",
+        brand: new Set(),
+        cat: "all",
+        cond: "all",
+        max: Infinity,
+        sort: "new",
+        favOnly: false,
+        favs: new Set(JSON.parse(localStorage.lh_favs || "[]")),
+        user: null,
+        role: "buyer",
+        code: null,
+      };
+      const byId = new Map();
+      function norm(it) {
+        let h = 0;
+        for (const c of it.brand) h = (h * 31 + c.charCodeAt(0)) % 360;
+        it.h = h;
+        it._s = (
+          it.title +
+          " " +
+          it.brand +
+          " " +
+          it.cat +
+          " " +
+          (it.spot || "")
+        ).toLowerCase();
+        it.ts = +new Date(it.ts);
+        it.price = +it.price;
+        it.clicks = it.clicks || 0;
+        return it;
+      }
+      function index(list) {
+        S.items = list.map(norm);
+        byId.clear();
+        for (const it of S.items) byId.set(it.id, it);
+      }
+
+      /* ---------- data layer: demo OR Supabase (same interface) ---------- */
+      const sb =
+        CFG.SUPABASE_URL && window.supabase
+          ? supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_KEY)
+          : null;
+      function seed(n) {
+        let r = 7;
+        const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647,
+          pick = (a) => a[Math.floor(rnd() * a.length)];
+        const D = {
+          Phones: [
+            ["Apple", "iPhone 13", 2800, 5200],
+            ["Samsung", "Galaxy S22", 2200, 4300],
+            ["Tecno", "Camon 20", 900, 1600],
+            ["Infinix", "Note 30", 800, 1500],
+            ["Xiaomi", "Redmi Note 12", 1000, 1700],
+          ],
+          Laptops: [
+            ["HP", "EliteBook 840", 2400, 4200],
+            ["Dell", "Latitude 5420", 2600, 4600],
+            ["Lenovo", "ThinkPad T480", 2000, 3500],
+            ["Apple", "MacBook Air M1", 6500, 9000],
+            ["Asus", "VivoBook 15", 2200, 3600],
+          ],
+          Accessories: [
+            ["Anker", "65W GaN charger", 180, 320],
+            ["JBL", "Tune 510BT", 250, 450],
+            ["Apple", "AirPods 2", 700, 1100],
+            ["Baseus", "10000mAh power bank", 150, 280],
+          ],
+          "Engineering tools": [
+            ["Casio", "fx-991EX", 150, 260],
+            ["Fluke", "117 multimeter", 900, 1500],
+            ["Arduino", "Uno starter kit", 200, 380],
+            ["Bosch", "Laser measure", 350, 620],
+          ],
+          Hostels: [
+            ["Sunyani Gate", "Single room", 3800, 5200],
+            ["Campus Edge", "2-in-1 room", 2600, 3600],
+          ],
+          Fashion: [
+            ["Thrift", "Jacket", 60, 160],
+            ["Local", "Kente stole", 80, 200],
+          ],
+          Services: [
+            ["Print", "Project printing", 20, 80],
+            ["Laundry", "Weekly wash", 40, 90],
+          ],
+          Food: [["Mama T", "Jollof lunch pack", 25, 45]],
+        };
+        const spots = [
+            "Main Library Gate",
+            "Science Block Café",
+            "Hostel A Junction",
+            "Admin Block",
+          ],
+          out = [];
+        for (let i = 0; i < n; i++) {
+          const micro = rnd() > 0.9,
+            cat = pick(micro ? MICRO : TECH),
+            [b, m, lo, hi] = pick(D[cat]);
+          out.push({
+            id: "d" + i,
+            title: b + " " + m,
+            brand: b,
+            cat,
+            hub: micro ? "micro" : "tech",
+            price: Math.round(lo + rnd() * (hi - lo)),
+            cond: pick(CONDS),
+            neg: rnd() > 0.5,
+            status: rnd() > 0.9 ? "sold" : "live",
+            spot: pick(spots),
+            vendor: "v" + (i % 5),
+            pro: null,
+            ts: Date.now() - i * 36e5,
+            clicks: Math.floor(rnd() * 40),
+            wa: "233240000000",
+            img: null,
+          });
+        }
+        return out;
+      }
+      const demoProfiles = [
+        { id: "v0", name: "Kofi A.", role: "vendor", referred_by: "KWAME" },
+        { id: "v1", name: "Ama B.", role: "vendor", referred_by: "KWAME" },
+        { id: "v2", name: "Yaw D.", role: "vendor", referred_by: "EFUA" },
+        { id: "p1", name: "Kwame (PRO)", role: "pro", pro_code: "KWAME" },
+        { id: "p2", name: "Efua (PRO)", role: "pro", pro_code: "EFUA" },
+      ];
+      const api = {
+        async load() {
+          if (!sb)
+            return seed(
+              +new URLSearchParams(location.search).get("stress") || 60,
+            );
+          const { data, error } = await sb
+            .from("listings")
+            .select("*")
+            .neq("status", "removed")
+            .order("ts", { ascending: false })
+            .limit(5000);
+          if (error) throw error;
+          return data;
+        },
+        async contact(id) {
+          if (!sb) return byId.get(id).wa;
+          const { data, error } = await sb.rpc("contact_listing", { lid: id });
+          return error ? null : data;
+        },
+        async add(it, wa) {
+          if (!sb) {
+            it.id = "n" + Date.now();
+            it.wa = wa;
+            return it;
+          }
+          const { vendor, pro, ...rest } = it,
+            { data, error } = await sb
+              .from("listings")
+              .insert({ ...rest, vendor_id: vendor, pro_id: pro })
+              .select()
+              .single();
+          if (error) throw error;
+          const c = await sb
+            .from("listing_contacts")
+            .insert({ listing_id: data.id, wa });
+          if (c.error) throw c.error;
+          return data;
+        },
+        async status(id, status) {
+          if (sb) {
+            const { error } = await sb
+              .from("listings")
+              .update({ status })
+              .eq("id", id);
+            if (error) throw error;
+          }
+          byId.get(id).status = status;
+        },
+        async profiles() {
+          if (!sb) return demoProfiles;
+          const { data } = await sb
+            .from("profiles")
+            .select("id,name,email,role,pro_code,referred_by")
+            .limit(2000);
+          return data || [];
+        },
+        async settings() {
+          let s = null;
+          try {
+            if (sb) {
+              const { data } = await sb
+                .from("settings")
+                .select("value")
+                .eq("key", "site")
+                .maybeSingle();
+              s = data?.value;
+              if (s) localStorage.lh_site = JSON.stringify(s);
+            } else s = JSON.parse(localStorage.lh_site || "null");
+          } catch (e) {
+            s = JSON.parse(localStorage.lh_site || "null");
+          }
+          s = s || {};
+          return {
+            ...DEF,
+            ...s,
+            dev: {
+              ...DEF.dev,
+              ...Object.fromEntries(
+                Object.entries(s.dev || {}).filter(([, v]) => v),
+              ),
+            },
+          };
+        },
+        async saveSettings(v) {
+          if (sb) {
+            const { error } = await sb
+              .from("settings")
+              .upsert({ key: "site", value: v });
+            if (error) throw error;
+          }
+          localStorage.lh_site = JSON.stringify(v);
+        },
+        async makePro(email) {
+          if (!sb) return true;
+          const { data, error } = await sb.rpc("make_pro", { p_email: email });
+          if (error) throw error;
+          return data;
+        },
+        async photo(file) {
+          const bm = await createImageBitmap(file),
+            r = Math.min(1, 900 / Math.max(bm.width, bm.height)),
+            c = document.createElement("canvas");
+          c.width = bm.width * r;
+          c.height = bm.height * r;
+          c.getContext("2d").drawImage(bm, 0, 0, c.width, c.height);
+          const blob = await new Promise((ok) =>
+              c.toBlob(ok, "image/webp", 0.78),
+            ),
+            P = CFG.IMG;
+          if (P.provider === "cloudinary") {
+            const fd = new FormData();
+            fd.append("file", blob);
+            fd.append("upload_preset", P.cloudinaryPreset);
+            const q = await fetch(
+                `https://api.cloudinary.com/v1_1/${P.cloudinaryCloud}/image/upload`,
+                { method: "POST", body: fd },
+              ),
+              j = await q.json();
+            if (!q.ok)
+              throw new Error(j.error?.message || "Image upload failed");
+            return j.secure_url;
+          }
+          if (P.provider === "imgbb") {
+            const fd = new FormData();
+            fd.append("image", blob);
+            const q = await fetch(
+                "https://api.imgbb.com/1/upload?key=" + P.imgbbKey,
+                { method: "POST", body: fd },
+              ),
+              j = await q.json();
+            if (!j.success)
+              throw new Error(j.error?.message || "Image upload failed");
+            return j.data.url;
+          }
+          if (!sb) return URL.createObjectURL(blob);
+          const path = `${S.user.id}/${Date.now()}.webp`,
+            u = await sb.storage
+              .from("listings")
+              .upload(path, blob, { contentType: "image/webp" });
+          if (u.error) throw u.error;
+          return sb.storage.from("listings").getPublicUrl(path).data.publicUrl;
+        },
+      };
+
+      /* ---------- pipeline: filter = one O(n) pass, sort = O(n log n) ---------- */
+      const SORT = {
+        new: (a, b) => b.ts - a.ts,
+        low: (a, b) => a.price - b.price || b.ts - a.ts,
+        high: (a, b) => b.price - a.price || b.ts - a.ts,
+      };
+      function run() {
+        const q = S.q.trim().toLowerCase(),
+          out = [],
+          items = S.items,
+          favs = S.favs,
+          br = S.brand;
+        for (let i = 0; i < items.length; i++) {
+          const it = items[i];
+          if (it.hub !== S.tab || it.status === "removed") continue;
+          if (S.cat !== "all" && it.cat !== S.cat) continue;
+          if (br.size && !br.has(it.brand)) continue;
+          if (S.cond !== "all" && it.cond !== S.cond) continue;
+          if (it.price > S.max) continue;
+          if (S.favOnly && !favs.has(it.id)) continue;
+          if (q && it._s.indexOf(q) < 0) continue;
+          out.push(it);
+        }
+        out.sort(SORT[S.sort]);
+        S.view = out;
+        render();
+      }
+      function card(it) {
+        const sold = it.status === "sold",
+          fav = S.favs.has(it.id);
+        return `<article class="card glass ${sold ? "sold" : ""}"><div class="art" style="--h:${it.h}">${it.img ? `<img loading="lazy" decoding="async" src="${esc(it.img)}" alt="${esc(it.title)}">` : `<span aria-hidden="true">${EMO[it.cat] || "📦"}</span>`}
+  <button class="heart ${fav ? "on" : ""}" data-act="fav" data-id="${it.id}" aria-pressed="${fav}" aria-label="Save ${esc(it.title)}">♥</button>${sold ? '<b class="tag">Sold</b>' : ""}</div>
+  <div class="p-3 grid gap-1"><p class="text-xs text-white/50">${esc(it.cat)}</p><h3 class="font-semibold text-sm leading-snug">${esc(it.title)}</h3>
+  <p class="font-bold text-cyan-300">${fmt(it.price)}${it.neg ? ' <span class="text-[11px] font-normal text-white/50">negotiable</span>' : ""}</p>
+  <p class="text-xs text-white/50">${esc(it.cond)}, meet at ${esc(it.spot || "campus")}</p>
+  <button class="btn btn-wa mt-2" data-act="chat" data-id="${it.id}" ${sold ? "disabled" : ""}>${sold ? "Sold" : "Chat on WhatsApp"}</button></div></article>`;
+      }
+      function render() {
+        $("#grid").innerHTML = "";
+        S.shown = 0;
+        more();
+        $("#count").textContent = S.view.length.toLocaleString() + " listings";
+        $("#empty").hidden = S.view.length > 0;
+      }
+      function more() {
+        const n = Math.min(S.shown + 24, S.view.length);
+        let h = "";
+        for (let i = S.shown; i < n; i++) h += card(S.view[i]);
+        $("#grid").insertAdjacentHTML("beforeend", h);
+        S.shown = n;
+      }
+      new IntersectionObserver(
+        (e) => {
+          if (e[0].isIntersecting && S.shown < S.view.length) more();
+        },
+        { rootMargin: "600px" },
+      ).observe($("#sentinel"));
+
+      function filters() {
+        const cats = S.tab === "tech" ? TECH : MICRO,
+          m = new Map();
+        for (let i = 0; i < S.items.length; i++) {
+          const it = S.items[i];
+          if (it.hub === S.tab && (S.cat === "all" || it.cat === S.cat))
+            m.set(it.brand, (m.get(it.brand) || 0) + 1);
+        }
+        const top = [...m].sort((a, b) => b[1] - a[1]).slice(0, 14);
+        $("#cats").innerHTML = ["all", ...cats]
+          .map(
+            (c) =>
+              `<button class="chip ${S.cat === c ? "on" : ""}" data-act="cat" data-v="${esc(c)}">${c === "all" ? "All" : esc(c)}</button>`,
+          )
+          .join("");
+        $("#brands").innerHTML = top
+          .map(
+            ([b, n]) =>
+              `<button class="chip ${S.brand.has(b) ? "on" : ""}" data-act="brand" data-v="${esc(b)}" aria-pressed="${S.brand.has(b)}">${esc(b)} ${n}</button>`,
+          )
+          .join("");
+      }
+
+      /* ---------- actions ---------- */
+      async function chat(id) {
+        const it = byId.get(id);
+        if (!it) return;
+        const w = window.open("about:blank", "_blank");
+        const num = await api.contact(id);
+        if (!num) {
+          w && w.close();
+          return toast("Could not open chat. Try again.", "err");
+        }
+        it.clicks++;
+        const url = `https://wa.me/${num}?text=${encodeURIComponent(`Hi, I saw "${it.title}" (${fmt(it.price)}) on LynxHub. Is it still available?`)}`;
+        if (w) w.location = url;
+        else location.href = url;
+        toast("Opening WhatsApp");
+      }
+      function fav(id, btn) {
+        S.favs.has(id) ? S.favs.delete(id) : S.favs.add(id);
+        localStorage.lh_favs = JSON.stringify([...S.favs]);
+        if (S.favOnly) return run();
+        btn.classList.toggle("on");
+        btn.setAttribute("aria-pressed", btn.classList.contains("on"));
+        toast(S.favs.has(id) ? "Saved" : "Removed from saved");
+      }
+      const wa = (v) => {
+        let d = v.replace(/\D/g, "");
+        if (d[0] === "0") d = "233" + d.slice(1);
+        return /^233\d{9}$/.test(d) ? d : null;
+      };
+
+      /* ---------- sheets: filters, account, dashboards ---------- */
+      function open(html) {
+        $("#sheet").innerHTML = html;
+        $("#sheetWrap").hidden = false;
+      }
+      function close() {
+        $("#sheetWrap").hidden = true;
+      }
+      function filterSheet() {
+        open(`<h2 class="font-bold text-lg mb-4">Filters</h2><div class="grid gap-4">
+  <label class="grid gap-1 text-sm">Condition<select id="fc" class="in"><option value="all">Any</option>${CONDS.map((c) => `<option ${S.cond === c ? "selected" : ""}>${c}</option>`).join("")}</select></label>
+  <label class="grid gap-1 text-sm">Max price (GH₵)<input id="fm" class="in" inputmode="numeric" value="${S.max === Infinity ? "" : S.max}" placeholder="No limit"></label>
+  <label class="flex gap-2 items-center text-sm"><input id="ff" type="checkbox" ${S.favOnly ? "checked" : ""}> Saved items only</label>
+  <div class="flex gap-2"><button class="btn btn-g flex-1" data-act="reset">Reset</button><button class="btn btn-p flex-1" data-act="apply">Show results</button></div></div>`);
+      }
+      function listingForm(forSeller) {
+        return `<div class="grid gap-3 mt-3"><h3 class="font-semibold">${forSeller ? "Post for a seller" : "Post a listing"}</h3>
+  ${forSeller ? '<input id="f_seller" class="in" placeholder="Seller name">' : ""}
+  <input id="f_title" class="in" placeholder="Title, e.g. HP EliteBook 840 G5 16GB/512GB">
+  <div class="grid grid-cols-2 gap-2"><input id="f_brand" class="in" placeholder="Brand"><input id="f_price" class="in" inputmode="numeric" placeholder="Price GH₵"></div>
+  <div class="grid grid-cols-2 gap-2"><select id="f_cat" class="in">${[...TECH, ...MICRO].map((c) => `<option>${c}</option>`).join("")}</select><select id="f_cond" class="in">${CONDS.map((c) => `<option>${c}</option>`).join("")}</select></div>
+  <input id="f_wa" class="in" inputmode="tel" placeholder="WhatsApp number, e.g. 024 123 4567"><input id="f_spot" class="in" placeholder="Meetup spot on campus">
+  <label class="text-sm flex gap-2 items-center"><input id="f_neg" type="checkbox"> Price is negotiable</label>
+  <label class="text-sm grid gap-1">Photo (auto-compressed)<input id="f_img" type="file" accept="image/*" class="in"></label><input id="f_imgurl" class="in" placeholder="...or paste an https:// image link">
+  <button class="btn btn-p" data-act="post" data-seller="${forSeller ? 1 : 0}">Publish listing</button></div>`;
+      }
+      const mine = (fn) => S.items.filter(fn).slice(0, 30);
+      function rows(list, mod) {
+        return list.length
+          ? list
+              .map(
+                (
+                  it,
+                ) => `<div class="flex items-center gap-2 py-2 border-b border-white/5 text-sm"><div class="flex-1 min-w-0"><p class="truncate">${esc(it.title)}</p><p class="text-xs text-white/50">${fmt(it.price)}, ${it.clicks} chats, ${esc(it.status)}</p></div>
+  ${mod ? "" : `<button class="btn btn-g !py-1.5" data-act="st" data-id="${it.id}" data-v="${it.status === "sold" ? "live" : "sold"}">${it.status === "sold" ? "Relist" : "Mark sold"}</button>`}
+  <button class="btn btn-g !py-1.5 text-red-300" data-act="st" data-id="${it.id}" data-v="removed">Remove</button></div>`,
+              )
+              .join("")
+          : '<p class="text-sm text-white/50 py-3">Nothing here yet.</p>';
+      }
+      async function account() {
+        const head = `<div class="flex items-center gap-3 mb-4"><svg class="w-9 h-9"><use href="#logo"/></svg><div><h2 class="font-bold">${S.user ? esc(S.user.name) : "Sell on LynxHub"}</h2><p class="text-xs text-white/50">${sb ? S.role : "Demo mode: preview each role"}</p></div><button class="btn btn-g ml-auto" data-act="close">Close</button></div>`;
+        if (sb && !S.user)
+          return open(
+            head +
+              `<p class="text-sm text-white/70 mb-4">Sign in with Google to post listings. Your listing goes live instantly. Buyers never need an account.</p><button class="btn btn-p w-full" data-act="login">Continue with Google</button>`,
+          );
+        let h = head;
+        if (!sb)
+          h += `<div class="flex gap-2 mb-3 overflow-x-auto noscroll">${["vendor", "pro", "admin"].map((r) => `<button class="chip ${S.role === r ? "on" : ""}" data-act="role" data-v="${r}">${{ vendor: "Seller", pro: "PRO", admin: "CEO" }[r]}</button>`).join("")}</div>`;
+        const uid = S.user?.id || "demo";
+        if (S.role === "vendor" || S.role === "buyer")
+          h +=
+            listingForm(false) +
+            `<h3 class="font-semibold mt-5">My listings</h3>` +
+            rows(mine((i) => i.vendor === uid));
+        if (S.role === "pro") {
+          const link = `${location.origin}${location.pathname}?ref=${S.code || "KWAME"}`,
+            ps = await api.profiles(),
+            vs = ps.filter(
+              (p) =>
+                p.role === "vendor" && p.referred_by === (S.code || "KWAME"),
+            ),
+            vid = new Set(vs.map((v) => v.id));
+          const clicks = S.items.reduce(
+            (a, i) => a + (vid.has(i.vendor) || i.pro === uid ? i.clicks : 0),
+            0,
+          );
+          h +=
+            `<div class="grid grid-cols-3 gap-2"><div class="kpi glass"><b>${vs.length}</b>sellers</div><div class="kpi glass"><b>${S.items.filter((i) => vid.has(i.vendor) || i.pro === uid).length}</b>listings</div><div class="kpi glass"><b>${clicks}</b>chats</div></div>
+    <p class="text-xs text-white/50 mt-4">Your recruiting link</p><div class="flex gap-2"><input class="in" readonly value="${esc(link)}"><button class="btn btn-g" data-act="copy" data-v="${esc(link)}">Copy</button></div>` +
+            listingForm(true) +
+            `<h3 class="font-semibold mt-5">Moderation: remove bad listings</h3>` +
+            rows(
+              S.items.filter((i) => i.status !== "removed").slice(0, 20),
+              true,
+            );
+        }
+        if (S.role === "admin") {
+          const ps = await api.profiles(),
+            ref = new Map(
+              ps
+                .filter((p) => p.role === "vendor")
+                .map((p) => [p.id, p.referred_by]),
+            );
+          let live = 0,
+            sold = 0,
+            gmv = 0,
+            clicks = 0;
+          const by = new Map();
+          for (const it of S.items) {
+            if (it.status === "live") live++;
+            if (it.status === "sold") {
+              sold++;
+              gmv += it.price;
+            }
+            clicks += it.clicks;
+            const c = ref.get(it.vendor);
+            if (c) by.set(c, (by.get(c) || 0) + it.clicks);
+          }
+          const pros = ps
+            .filter((p) => p.role === "pro")
+            .map((p) => ({
+              n: p.name || p.email,
+              v: ps.filter((x) => x.referred_by === p.pro_code).length,
+              c: by.get(p.pro_code) || 0,
+            }))
+            .sort((a, b) => b.c - a.c);
+          const top = [...S.items]
+            .sort((a, b) => b.clicks - a.clicks)
+            .slice(0, 5);
+          h +=
+            `<div class="grid grid-cols-2 gap-2"><div class="kpi glass"><b>${live.toLocaleString()}</b>live listings</div><div class="kpi glass"><b>${clicks.toLocaleString()}</b>WhatsApp chats</div><div class="kpi glass"><b>${fmt(gmv)}</b>est. sold value</div><div class="kpi glass"><b>${ps.filter((p) => p.role === "vendor").length}</b>sellers</div></div>
+    <button class="btn btn-g w-full mt-4" data-act="site">Edit site: name, text, categories, theme, my contact</button><h3 class="font-semibold mt-5">PRO leaderboard</h3>${pros.map((p) => `<div class="flex justify-between text-sm py-1.5 border-b border-white/5"><span>${esc(p.n)}</span><span class="text-white/60">${p.v} sellers, ${p.c} chats</span></div>`).join("") || '<p class="text-sm text-white/50">No PROs yet.</p>'}
+    <h3 class="font-semibold mt-5">Top listings by chats</h3>${top.map((i) => `<div class="flex justify-between text-sm py-1.5 border-b border-white/5"><span class="truncate pr-2">${esc(i.title)}</span><span>${i.clicks}</span></div>`).join("")}
+    <h3 class="font-semibold mt-5">Add a PRO</h3><div class="flex gap-2"><input id="pe" class="in" placeholder="Their Google email"><button class="btn btn-p" data-act="mkpro">Make PRO</button></div>` +
+            `<h3 class="font-semibold mt-5">Moderation</h3>` +
+            rows(
+              S.items.filter((i) => i.status !== "removed").slice(0, 20),
+              true,
+            );
+        }
+        h += `<button class="btn btn-g w-full mt-6" data-act="${sb ? "logout" : "close"}">${sb ? "Sign out" : "Done"}</button><p class="text-[11px] text-white/35 mt-3">LynxHub by Joel Lynx</p>`;
+        open(h);
+      }
+
+      async function post(seller) {
+        const v = (id) => ($("#" + id)?.value || "").trim(),
+          n = wa(v("f_wa")),
+          price = +v("f_price");
+        if (!v("f_title") || !v("f_brand") || !(price > 0))
+          return toast("Add a title, brand and price", "err");
+        if (!n) return toast("Enter a valid Ghana WhatsApp number", "err");
+        const btn = $("[data-act=post]");
+        btn.disabled = true;
+        try {
+          const f = $("#f_img").files[0],
+            img = f
+              ? await api.photo(f)
+              : /^https:\/\//.test(v("f_imgurl"))
+                ? v("f_imgurl")
+                : null,
+            cat = v("f_cat"),
+            row = await api.add(
+              {
+                title: v("f_title"),
+                brand: v("f_brand"),
+                cat,
+                hub: MICRO.includes(cat) ? "micro" : "tech",
+                price,
+                cond: v("f_cond"),
+                neg: $("#f_neg").checked,
+                status: "live",
+                spot: v("f_spot"),
+                vendor: S.user?.id || "demo",
+                pro: seller ? S.user?.id || "demo" : null,
+                img,
+                ts: new Date().toISOString(),
+                clicks: 0,
+              },
+              n,
+            );
+          row.ts = row.ts || Date.now();
+          index([norm(row), ...S.items]);
+          filters();
+          run();
+          toast("Published. Your listing is live.");
+          account();
+        } catch (e) {
+          toast(e.message || "Could not publish", "err");
+          btn.disabled = false;
+        }
+      }
+
+      document.addEventListener("click", async (e) => {
+        const b = e.target.closest("[data-act]");
+        if (!b) return;
+        const a = b.dataset.act,
+          v = b.dataset.v,
+          id = b.dataset.id;
+        try {
+          switch (a) {
+            case "tab":
+              S.tab = v;
+              S.cat = "all";
+              S.brand.clear();
+              $("#tab-tech").className =
+                v === "tech"
+                  ? "font-semibold pb-1 border-b-2 border-cyan-300"
+                  : "text-white/45 text-xs pb-1 border-b-2 border-transparent self-end";
+              $("#tab-micro").className =
+                v === "micro"
+                  ? "font-semibold pb-1 border-b-2 border-cyan-300"
+                  : "text-white/45 text-xs pb-1 border-b-2 border-transparent self-end";
+              filters();
+              run();
+              break;
+            case "cat":
+              S.cat = v;
+              S.brand.clear();
+              filters();
+              run();
+              break;
+            case "brand":
+              S.brand.has(v) ? S.brand.delete(v) : S.brand.add(v);
+              filters();
+              run();
+              break;
+            case "fav":
+              fav(id, b);
+              break;
+            case "chat":
+              chat(id);
+              break;
+            case "filters":
+              filterSheet();
+              break;
+            case "close":
+              close();
+              break;
+            case "apply":
+              S.cond = $("#fc").value;
+              S.max = +$("#fm").value || Infinity;
+              S.favOnly = $("#ff").checked;
+              close();
+              run();
+              break;
+            case "reset":
+              S.cond = "all";
+              S.max = Infinity;
+              S.favOnly = false;
+              close();
+              run();
+              break;
+            case "account":
+              account();
+              break;
+            case "role":
+              S.role = v;
+              account();
+              break;
+            case "look":
+              look();
+              break;
+            case "site":
+              siteSheet();
+              break;
+            case "savesite":
+              await saveSite();
+              break;
+            case "theme":
+              LOOK.theme = v;
+              delete LOOK.acc;
+              saveLook();
+              applyLook();
+              look();
+              break;
+            case "dens":
+              LOOK.dens = v;
+              saveLook();
+              applyLook();
+              look();
+              break;
+            case "resetlook":
+              LOOK = {};
+              saveLook();
+              applyLook();
+              look();
+              break;
+            case "post":
+              post(b.dataset.seller === "1");
+              break;
+            case "st":
+              await api.status(id, v);
+              toast(
+                v === "removed"
+                  ? "Removed"
+                  : v === "sold"
+                    ? "Marked sold"
+                    : "Relisted",
+              );
+              run();
+              account();
+              break;
+            case "copy":
+              await navigator.clipboard.writeText(v);
+              toast("Link copied");
+              break;
+            case "mkpro":
+              await api.makePro($("#pe").value.trim());
+              toast("PRO added");
+              account();
+              break;
+            case "login":
+              sb.auth.signInWithOAuth({
+                provider: "google",
+                options: { redirectTo: location.origin + location.pathname },
+              });
+              break;
+            case "logout":
+              await sb.auth.signOut();
+              S.user = null;
+              S.role = "buyer";
+              $("#acctBtn").textContent = "Sell";
+              close();
+              break;
+          }
+        } catch (err) {
+          toast(err.message || "Something went wrong", "err");
+        }
+      });
+      let dt;
+      $("#q").addEventListener("input", (e) => {
+        clearTimeout(dt);
+        dt = setTimeout(() => {
+          S.q = e.target.value;
+          run();
+        }, 120);
+      });
+      $("#sort").addEventListener("change", (e) => {
+        S.sort = e.target.value;
+        run();
+      });
+
+      /* ---------- theme, site settings, footer ---------- */
+      const saveLook = () => (localStorage.lh_look = JSON.stringify(LOOK));
+      function applyLook() {
+        const t = THEMES[LOOK.theme || SET.theme] || THEMES.aurora,
+          r = document.documentElement;
+        r.dataset.theme = t.mode || "dark";
+        r.style.setProperty("--cy", LOOK.acc || t.cy);
+        r.style.setProperty("--vi", t.vi);
+        r.style.setProperty(
+          "--cw",
+          LOOK.dens === "compact" ? "145px" : "200px",
+        );
+        document.querySelector("meta[name=theme-color]").content =
+          t.mode === "light" ? "#f4f6fb" : "#07080d";
+      }
+      function foot() {
+        const d = SET.dev || {},
+          n = (d.whatsapp || "").replace(/\D/g, ""),
+          l = [
+            n &&
+              `<a class="btn btn-g" href="https://wa.me/${n}" target="_blank" rel="noopener">WhatsApp</a>`,
+            d.phone &&
+              `<a class="btn btn-g" href="tel:${esc(d.phone)}">Call</a>`,
+            d.email &&
+              `<a class="btn btn-g" href="mailto:${esc(d.email)}">Email</a>`,
+          ]
+            .filter(Boolean)
+            .join("");
+        $("#foot").innerHTML =
+          `<div class="glass rounded-2xl p-4 flex flex-wrap items-center gap-3"><svg class="w-9 h-9"><use href="#logo"/></svg><div class="mr-auto"><p class="font-semibold text-sm">${esc(SET.brand)}</p><p class="text-xs text-white/50">Designed and built by <b>${esc(d.name)}</b>${d.role ? ", " + esc(d.role) : ""}</p></div>${l}</div><p class="text-[11px] text-white/35 mt-3">Meet in public campus spots, inspect the item, and pay by MoMo only in person.</p>`;
+      }
+      function applySettings() {
+        const s = SET;
+        document.title = s.brand + " – " + s.tag;
+        $("#brandName").textContent = s.brand;
+        $("#tagline").textContent = s.tag;
+        $("#heroT").textContent = s.heroTitle;
+        $("#heroS").textContent = s.heroSub;
+        const n = $("#notice");
+        n.textContent = s.notice;
+        n.hidden = !s.notice;
+        $("#tab-micro").textContent = s.microName;
+        const L = (x) =>
+          x
+            .split(",")
+            .map((y) => y.trim())
+            .filter(Boolean);
+        TECH = L(s.tech);
+        MICRO = L(s.micro);
+        applyLook();
+        foot();
+      }
+      function look() {
+        const cur = LOOK.theme || SET.theme;
+        open(`<div class="flex items-center mb-4"><h2 class="font-bold text-lg">Appearance</h2><button class="btn btn-g ml-auto" data-act="close">Done</button></div>
+  <p class="text-xs text-white/50 mb-2">Theme</p><div class="flex flex-wrap gap-2">${Object.entries(
+    THEMES,
+  )
+    .map(
+      ([k, t]) =>
+        `<button class="chip ${cur === k ? "on" : ""}" data-act="theme" data-v="${k}"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,${t.cy},${t.vi});margin-right:6px"></span>${t.n}</button>`,
+    )
+    .join("")}</div>
+  <p class="text-xs text-white/50 mt-5 mb-2">Accent colour</p><input id="acc" type="color" value="${LOOK.acc || THEMES[cur].cy}" style="width:100%;height:44px;border-radius:12px;background:none;border:0">
+  <p class="text-xs text-white/50 mt-5 mb-2">Card size</p><div class="flex gap-2"><button class="chip ${LOOK.dens !== "compact" ? "on" : ""}" data-act="dens" data-v="comfy">Comfortable</button><button class="chip ${LOOK.dens === "compact" ? "on" : ""}" data-act="dens" data-v="compact">Compact</button></div>
+  <button class="btn btn-g w-full mt-6" data-act="resetlook">Reset to site default</button>`);
+      }
+      document.addEventListener("input", (e) => {
+        if (e.target.id === "acc") {
+          LOOK.acc = e.target.value;
+          saveLook();
+          applyLook();
+        }
+      });
+      function siteSheet() {
+        const d = SET.dev || {},
+          f = (id, l, v) =>
+            `<label class="grid gap-1 text-xs text-white/60">${l}<input id="s_${id}" class="in" value="${esc(v)}"></label>`;
+        open(`<div class="flex items-center mb-4"><h2 class="font-bold text-lg">Edit site</h2><button class="btn btn-g ml-auto" data-act="account">Back</button></div><div class="grid gap-3">
+  ${f("brand", "Site name", SET.brand)}${f("tag", "Tagline", SET.tag)}${f("heroTitle", "Home headline", SET.heroTitle)}
+  <label class="grid gap-1 text-xs text-white/60">Home sub-text<textarea id="s_heroSub" class="in" rows="3">${esc(SET.heroSub)}</textarea></label>
+  ${f("notice", "Announcement banner (empty = hidden)", SET.notice)}
+  <label class="grid gap-1 text-xs text-white/60">Default theme<select id="s_theme" class="in">${Object.entries(
+    THEMES,
+  )
+    .map(
+      ([k, t]) =>
+        `<option value="${k}" ${SET.theme === k ? "selected" : ""}>${t.n}</option>`,
+    )
+    .join("")}</select></label>
+  ${f("tech", "Tech categories (comma separated)", SET.tech)}${f("microName", "Micro-Hub tab name", SET.microName)}${f("micro", "Micro-Hub categories", SET.micro)}
+  <p class="text-xs text-white/50 mt-2">Developer contact (footer)</p>${f("dn", "Name", d.name || "")}${f("dr", "Role", d.role || "")}${f("dw", "WhatsApp (233...)", d.whatsapp || "")}${f("dp", "Phone", d.phone || "")}${f("de", "Email", d.email || "")}
+  <button class="btn btn-p" data-act="savesite">Save changes</button></div>`);
+      }
+      async function saveSite() {
+        const g = (id) => $("#s_" + id).value.trim(),
+          L = (x) =>
+            x
+              .split(",")
+              .map((y) => y.trim())
+              .filter(Boolean)
+              .join(",");
+        const v = {
+          ...SET,
+          brand: g("brand") || "LynxHub",
+          tag: g("tag"),
+          heroTitle: g("heroTitle"),
+          heroSub: g("heroSub"),
+          notice: g("notice"),
+          theme: g("theme"),
+          tech: L(g("tech")) || SET.tech,
+          microName: g("microName") || "Micro-Hub",
+          micro: L(g("micro")) || SET.micro,
+          dev: {
+            name: g("dn"),
+            role: g("dr"),
+            whatsapp: g("dw"),
+            phone: g("dp"),
+            email: g("de"),
+          },
+        };
+        await api.saveSettings(v);
+        SET = v;
+        S.cat = "all";
+        S.brand.clear();
+        applySettings();
+        filters();
+        run();
+        toast("Site updated");
+        account();
+      }
+
+      /* ---------- auth, PWA, offline ---------- */
+      async function setUser(u) {
+        if (!u) {
+          S.user = null;
+          return;
+        }
+        let { data: p } = await sb
+          .from("profiles")
+          .select("*")
+          .eq("id", u.id)
+          .single();
+        p = p || {};
+        const ref = localStorage.lh_ref;
+        if (ref && !p.referred_by && p.role === "vendor")
+          sb.from("profiles")
+            .update({ referred_by: ref })
+            .eq("id", u.id)
+            .is("referred_by", null)
+            .then(() => {});
+        S.user = {
+          id: u.id,
+          name: p.name || u.user_metadata?.full_name || u.email,
+        };
+        S.role = p.role || "vendor";
+        S.code = p.pro_code;
+        $("#acctBtn").textContent =
+          S.role === "admin" ? "CEO" : S.role === "pro" ? "PRO" : "My shop";
+      }
+      const r = new URLSearchParams(location.search).get("ref");
+      if (r) localStorage.lh_ref = r.toUpperCase().slice(0, 20);
+      addEventListener("online", () => {
+        $("#net").hidden = true;
+        toast("Back online");
+      });
+      addEventListener("offline", () => {
+        $("#net").hidden = false;
+      });
+      if (!navigator.onLine) $("#net").hidden = false;
+      let dip;
+      addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        dip = e;
+        $("#install").hidden = false;
+      });
+      $("#install").onclick = async () => {
+        dip.prompt();
+        await dip.userChoice;
+        $("#install").hidden = true;
+      };
+      if ("serviceWorker" in navigator)
+        addEventListener("load", () =>
+          navigator.serviceWorker.register("sw.js").catch(() => {}),
+        );
+
+      (async () => {
+        $("#grid").innerHTML = Array(8)
+          .fill(
+            '<div class="card glass" style="height:270px;opacity:.45"></div>',
+          )
+          .join("");
+        applySettings();
+        SET = await api.settings();
+        applySettings();
+        if (sb) {
+          sb.auth.onAuthStateChange((_, s) => setUser(s?.user));
+        }
+        try {
+          const d = await api.load();
+          index(d);
+          if (sb) localStorage.lh_cache = JSON.stringify(d.slice(0, 200));
+        } catch (e) {
+          index(JSON.parse(localStorage.lh_cache || "[]"));
+          toast("Showing saved catalog", "err");
+        }
+        filters();
+        run();
+      })();
+    </script>
+  </body>
+</html>
