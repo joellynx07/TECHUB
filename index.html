@@ -22,6 +22,7 @@
     />
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
     <style>
       :root {
         --bg: #07080d;
@@ -417,7 +418,18 @@
           class="text-2xl md:text-3xl font-bold leading-tight"
         ></h2>
         <p id="heroS" class="text-white/60 mt-2 max-w-xl text-sm"></p>
-       
+        <div class="grid grid-cols-3 gap-2 mt-4 text-center text-xs">
+          <div class="kpi glass">
+            <b style="font-size: 14px">1. Chat</b>on WhatsApp
+          </div>
+          <div class="kpi glass">
+            <b style="font-size: 14px">2. Meet</b>on campus
+          </div>
+          <div class="kpi glass">
+            <b style="font-size: 14px">3. Pay</b>by MoMo
+          </div>
+        </div>
+      </div>
     </section>
     <nav
       class="max-w-6xl mx-auto px-4 mt-4 flex gap-5 text-sm"
@@ -504,7 +516,7 @@
           name: "Joel Lynx",
           role: "Developer",
           whatsapp: "+233531902007",
-          phone: "+233531902007",
+          phone: "0531902007",
           email: "joeljudiahamoah71@gmail.com",
         }, // <- put YOUR contact here (shows in the footer)
       };
@@ -1003,7 +1015,7 @@
         if (sb && !S.user)
           return open(
             head +
-              `<p class="text-sm text-white/70 mb-4">Sign in with Google to post listings. Your listing goes live instantly. Buyers never need an account.</p><button class="btn btn-p w-full" data-act="login">Continue with Google</button>`,
+              `<p class="text-sm text-white/70 mb-4">Sign in with Google to post listings. Your listing goes live instantly. Buyers never need an account.</p><button class="btn btn-p w-full" data-act="login">Continue with Google</button><p class="text-[11px] text-white/50 mt-3">By continuing you agree to our <a href="terms.html" class="text-cyan-300">Terms of Service</a> and <a href="privacy.html" class="text-cyan-300">Privacy Policy</a>.</p>`,
           );
         let h = head;
         if (!sb)
@@ -1028,7 +1040,7 @@
           );
           h +=
             `<div class="grid grid-cols-3 gap-2"><div class="kpi glass"><b>${vs.length}</b>sellers</div><div class="kpi glass"><b>${S.items.filter((i) => vid.has(i.vendor) || i.pro === uid).length}</b>listings</div><div class="kpi glass"><b>${clicks}</b>chats</div></div>
-    <p class="text-xs text-white/50 mt-4">Your recruiting link</p><div class="flex gap-2"><input class="in" readonly value="${esc(link)}"><button class="btn btn-g" data-act="copy" data-v="${esc(link)}">Copy</button></div>` +
+    <button class="btn btn-p w-full mt-4" data-act="qr">Seller QR poster for WhatsApp</button><p class="text-xs text-white/50 mt-4">Your recruiting link</p><div class="flex gap-2"><input class="in" readonly value="${esc(link)}"><button class="btn btn-g" data-act="copy" data-v="${esc(link)}">Copy</button></div>` +
             listingForm(true) +
             `<h3 class="font-semibold mt-5">Moderation: remove bad listings</h3>` +
             rows(
@@ -1071,7 +1083,7 @@
             .slice(0, 5);
           h +=
             `<div class="grid grid-cols-2 gap-2"><div class="kpi glass"><b>${live.toLocaleString()}</b>live listings</div><div class="kpi glass"><b>${clicks.toLocaleString()}</b>WhatsApp chats</div><div class="kpi glass"><b>${fmt(gmv)}</b>est. sold value</div><div class="kpi glass"><b>${ps.filter((p) => p.role === "vendor").length}</b>sellers</div></div>
-    <button class="btn btn-g w-full mt-4" data-act="site">Edit site: name, text, categories, theme, my contact</button><h3 class="font-semibold mt-5">PRO leaderboard</h3>${pros.map((p) => `<div class="flex justify-between text-sm py-1.5 border-b border-white/5"><span>${esc(p.n)}</span><span class="text-white/60">${p.v} sellers, ${p.c} chats</span></div>`).join("") || '<p class="text-sm text-white/50">No PROs yet.</p>'}
+    <button class="btn btn-p w-full mt-4" data-act="qr">Seller QR poster for WhatsApp</button><button class="btn btn-g w-full mt-2" data-act="site">Edit site: name, text, categories, theme, my contact</button><h3 class="font-semibold mt-5">PRO leaderboard</h3>${pros.map((p) => `<div class="flex justify-between text-sm py-1.5 border-b border-white/5"><span>${esc(p.n)}</span><span class="text-white/60">${p.v} sellers, ${p.c} chats</span></div>`).join("") || '<p class="text-sm text-white/50">No PROs yet.</p>'}
     <h3 class="font-semibold mt-5">Top listings by chats</h3>${top.map((i) => `<div class="flex justify-between text-sm py-1.5 border-b border-white/5"><span class="truncate pr-2">${esc(i.title)}</span><span>${i.clicks}</span></div>`).join("")}
     <h3 class="font-semibold mt-5">Add a PRO</h3><div class="flex gap-2"><input id="pe" class="in" placeholder="Their Google email"><button class="btn btn-p" data-act="mkpro">Make PRO</button></div>` +
             `<h3 class="font-semibold mt-5">Moderation</h3>` +
@@ -1202,6 +1214,19 @@
             case "look":
               look();
               break;
+            case "qr":
+              qrSheet();
+              break;
+            case "qrdl": {
+              const a = document.createElement("a");
+              a.download = "lynxhub-seller-qr.png";
+              a.href = $("#qrc").toDataURL("image/png");
+              a.click();
+              break;
+            }
+            case "qrshare":
+              shareQR();
+              break;
             case "site":
               siteSheet();
               break;
@@ -1311,7 +1336,7 @@
             .filter(Boolean)
             .join("");
         $("#foot").innerHTML =
-          `<div class="glass rounded-2xl p-4 flex flex-wrap items-center gap-3"><svg class="w-9 h-9"><use href="#logo"/></svg><div class="mr-auto"><p class="font-semibold text-sm">${esc(SET.brand)}</p><p class="text-xs text-white/50">Designed and built by <b>${esc(d.name)}</b>${d.role ? ", " + esc(d.role) : ""}</p></div>${l}</div><p class="text-[11px] text-white/35 mt-3">Meet in public campus spots, inspect the item, and pay by MoMo only in person.</p>`;
+          `<div class="glass rounded-2xl p-4 flex flex-wrap items-center gap-3"><svg class="w-9 h-9"><use href="#logo"/></svg><div class="mr-auto"><p class="font-semibold text-sm">${esc(SET.brand)}</p><p class="text-xs text-white/50">Designed and built by <b>${esc(d.name)}</b>${d.role ? ", " + esc(d.role) : ""}</p></div>${l}</div><p class="text-[11px] text-white/35 mt-3">Meet in public campus spots, inspect the item, and pay by MoMo only in person.</p><p class="text-xs mt-3 flex gap-4"><a href="privacy.html" class="text-cyan-300">Privacy Policy</a><a href="terms.html" class="text-cyan-300">Terms of Service</a></p>`;
       }
       function applySettings() {
         const s = SET;
@@ -1414,6 +1439,116 @@
         account();
       }
 
+      /* ---------- seller QR poster ---------- */
+      const joinLink = () => {
+        const c = S.role === "pro" ? S.code || "KWAME" : "";
+        return `${location.origin}${location.pathname}?join=1${c ? "&ref=" + c : ""}`;
+      };
+      async function qrSheet() {
+        const link = joinLink(),
+          local = /^(localhost|127\.|192\.168\.)/.test(location.hostname);
+        open(`<div class="flex items-center mb-3"><h2 class="font-bold text-lg">Seller QR poster</h2><button class="btn btn-g ml-auto" data-act="account">Back</button></div>
+  <p class="text-xs text-white/60 mb-3">Sellers scan this, sign in with Google and post offers or services in about a minute. Download it and post it on WhatsApp Status and groups.</p>
+  ${local ? '<p class="text-xs mb-3" style="color:#ffb020">This QR points to your local test address. Deploy the site first, then open this screen from your live link.</p>' : ""}
+  <canvas id="qrc" width="1080" height="1350" style="width:100%;border-radius:16px"></canvas>
+  <div class="grid grid-cols-2 gap-2 mt-3"><button class="btn btn-p" data-act="qrdl">Download PNG</button><button class="btn btn-g" data-act="qrshare">Share</button></div>
+  <button class="btn btn-g w-full mt-2" data-act="copy" data-v="${esc(link)}">Copy link</button>`);
+        try {
+          await poster(link);
+        } catch (e) {
+          toast("Could not draw the QR. Check your internet and retry.", "err");
+        }
+      }
+      async function poster(link) {
+        await document.fonts.ready;
+        const c = $("#qrc"),
+          x = c.getContext("2d"),
+          st = getComputedStyle(document.documentElement),
+          a = st.getPropertyValue("--cy").trim() || "#22e5ff",
+          b = st.getPropertyValue("--vi").trim() || "#8b5cf6",
+          F = "Sora,system-ui,sans-serif";
+        const g = x.createLinearGradient(0, 0, 1080, 1350);
+        g.addColorStop(0, "#07080d");
+        g.addColorStop(1, "#12122a");
+        x.fillStyle = g;
+        x.fillRect(0, 0, 1080, 1350);
+        for (const [px, py, col] of [
+          [120, 160, a],
+          [980, 1200, b],
+        ]) {
+          const r = x.createRadialGradient(px, py, 0, px, py, 430);
+          r.addColorStop(0, col + "66");
+          r.addColorStop(1, "transparent");
+          x.fillStyle = r;
+          x.fillRect(0, 0, 1080, 1350);
+        }
+        x.textAlign = "center";
+        try {
+          const im = new Image();
+          im.src = "icon.svg";
+          await im.decode();
+          x.save();
+          x.beginPath();
+          x.roundRect(465, 70, 150, 150, 34);
+          x.clip();
+          x.drawImage(im, 465, 70, 150, 150);
+          x.restore();
+        } catch (e) {}
+        x.fillStyle = "#fff";
+        x.font = `700 66px ${F}`;
+        x.fillText(SET.brand, 540, 300);
+        x.font = `700 54px ${F}`;
+        x.fillText("Sell your phone, laptop,", 540, 400);
+        x.fillText("offers or services", 540, 465);
+        const q = qrcode(0, "M");
+        q.addData(link);
+        q.make();
+        const n = q.getModuleCount(),
+          cell = Math.floor(620 / n),
+          sz = cell * n,
+          ox = 540 - sz / 2,
+          oy = 560 + (700 - sz) / 2;
+        x.fillStyle = "#fff";
+        x.beginPath();
+        x.roundRect(190, 560, 700, 700, 40);
+        x.fill();
+        x.fillStyle = "#07080d";
+        for (let r = 0; r < n; r++)
+          for (let k = 0; k < n; k++)
+            if (q.isDark(r, k))
+              x.fillRect(ox + k * cell, oy + r * cell, cell, cell);
+        x.fillStyle = a;
+        x.font = `700 40px ${F}`;
+        x.fillText("Scan to list in 1 minute", 540, 1315);
+        x.fillStyle = "rgba(255,255,255,.55)";
+        x.font = `400 26px ${F}`;
+        x.fillText(
+          "Free for campus sellers. Built by " + (SET.dev.name || ""),
+          540,
+          1348,
+        );
+      }
+      function shareQR() {
+        const link = joinLink(),
+          text = `Sell your phone, laptop, offers or services on ${SET.brand}. Scan the poster or tap: ${link}`;
+        $("#qrc").toBlob(async (b) => {
+          const f = new File([b], "lynxhub-seller-qr.png", {
+            type: "image/png",
+          });
+          try {
+            if (navigator.canShare?.({ files: [f] }))
+              await navigator.share({ files: [f], text });
+            else {
+              window.open(
+                "https://wa.me/?text=" + encodeURIComponent(text),
+                "_blank",
+              );
+              toast("Tap Download PNG, then attach it in WhatsApp");
+            }
+          } catch (e) {}
+        });
+      }
+
       /* ---------- auth, PWA, offline ---------- */
       async function setUser(u) {
         if (!u) {
@@ -1441,7 +1576,13 @@
         S.code = p.pro_code;
         $("#acctBtn").textContent =
           S.role === "admin" ? "CEO" : S.role === "pro" ? "PRO" : "My shop";
+        if (localStorage.lh_join) {
+          localStorage.removeItem("lh_join");
+          account();
+        }
       }
+      if (new URLSearchParams(location.search).has("join"))
+        localStorage.lh_join = 1;
       const r = new URLSearchParams(location.search).get("ref");
       if (r) localStorage.lh_ref = r.toUpperCase().slice(0, 20);
       addEventListener("online", () => {
@@ -1490,6 +1631,10 @@
         }
         filters();
         run();
+        if (!sb && localStorage.lh_join) {
+          localStorage.removeItem("lh_join");
+          account();
+        }
       })();
     </script>
   </body>
